@@ -10,15 +10,25 @@ app = Flask(__name__)
 CSV_FILE = os.path.join('data', 'friction_points.csv')
 
 def generate_map():
+    if not os.path.exists(CSV_FILE):
+        print("CSV file not found — skipping map generation.")
+        return
+
     df = pd.read_csv(CSV_FILE)
 
-    m = folium.Map(location=[51.5074, -0.1278], zoom_start=15)
+    if df.empty:
+        center = [51.5074, -0.1278]
+    else:
+        latest = df.iloc[-1]
+        center = [float(latest['lat']), float(latest['lng'])]
+
+    m = folium.Map(location=center, zoom_start=18)
 
     for _, row in df.iterrows():
         color = 'red' if int(row['severity']) >= 4 else 'orange' if int(row['severity']) == 3 else 'blue'
 
         image_html = ""
-        if 'image' in row and row['image']:
+        if 'image' in row.keys() and pd.notna(row['image']) and row['image']:
             image_url = f"/static/uploads/{row['image']}"
             image_html = f"<br><img src='{image_url}' width='150' style='margin-top:5px;'>"
 
